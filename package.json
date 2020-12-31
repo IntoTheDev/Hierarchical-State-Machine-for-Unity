@@ -1,0 +1,12 @@
+{
+  "name": "com.intothedev.ai",
+  "version": "1.0.0",
+  "displayName": "Hierarchical State Machine",
+  "description": "",
+  "author": {
+    "name": "IntoTheDev",
+    "email": "indraayy322@gmail.com",
+    "url": "https://github.com/IntoTheDev"
+  },
+  "type": "tool"
+}

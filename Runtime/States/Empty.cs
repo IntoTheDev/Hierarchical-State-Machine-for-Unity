@@ -1,5 +1,8 @@
-﻿namespace ToolBox.StateMachine
+﻿using UnityEngine;
+
+namespace ToolBox.StateMachine
 {
+	[System.Serializable]
 	public class Empty : IState
 	{
 		public void OnEnter()

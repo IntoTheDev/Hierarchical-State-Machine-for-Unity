@@ -6,7 +6,7 @@
 
 		void OnResume();
 
-		bool Check();
+		bool Check(float deltaTime);
 
 		void OnPause();
 

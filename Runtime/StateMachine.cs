@@ -11,6 +11,7 @@ namespace ToolBox.StateMachine
 		private Dictionary<Type, List<Transition>> _transitions = new Dictionary<Type, List<Transition>>();
 		private List<Transition> _currentTransitions = new List<Transition>();
 		private List<Transition> _anyTransitions = new List<Transition>();
+		private List<IState> _concurrentStates = new List<IState>();
 
 		private static List<Transition> _emptyTransitions = new List<Transition>(0);
 
@@ -23,6 +24,10 @@ namespace ToolBox.StateMachine
 		{
 			_currentState?.OnResume();
 
+			var count = _concurrentStates.Count;
+			for (int i = 0; i < count; i++)
+				_concurrentStates[i].OnResume();
+
 			OnTransitionsResume(_currentTransitions);
 			OnTransitionsResume(_anyTransitions);
 		}
@@ -30,6 +35,10 @@ namespace ToolBox.StateMachine
 		public void OnPause()
 		{
 			_currentState?.OnPause();
+
+			var count = _concurrentStates.Count;
+			for (int i = 0; i < count; i++)
+				_concurrentStates[i].OnPause();
 
 			OnTransitionsPause(_currentTransitions);
 			OnTransitionsPause(_anyTransitions);
@@ -39,22 +48,33 @@ namespace ToolBox.StateMachine
 		{
 			SetState(_startState, true);
 
-			OnTransitionsEnter(_currentTransitions);
+			var count = _concurrentStates.Count;
+			for (int i = 0; i < count; i++)
+				_concurrentStates[i].OnEnter();
+
 			OnTransitionsEnter(_anyTransitions);
 		}
 
 		public void Tick(float deltaTime)
 		{
-			var transition = GetTransition();
+			var transition = GetTransition(deltaTime);
 			if (transition != null)
 				SetState(transition.To, false);
 
 			_currentState?.Tick(deltaTime);
+
+			var count = _concurrentStates.Count;
+			for (int i = 0; i < count; i++)
+				_concurrentStates[i].Tick(deltaTime);
 		}
 
 		public void OnExit()
 		{
 			_currentState?.OnExit();
+
+			var count = _concurrentStates.Count;
+			for (int i = 0; i < count; i++)
+				_concurrentStates[i].OnExit();
 
 			OnTransitionsExit(_currentTransitions);
 			OnTransitionsExit(_anyTransitions);
@@ -65,7 +85,12 @@ namespace ToolBox.StateMachine
 			if (state == _currentState && !force)
 				return;
 
-			_currentState?.OnExit();
+			if (_currentState != null)
+			{
+				_currentState.OnExit();
+				OnTransitionsExit(_currentTransitions);
+			}
+
 			_currentState = state;
 
 			_transitions.TryGetValue(_currentState.GetType(), out _currentTransitions);
@@ -73,9 +98,10 @@ namespace ToolBox.StateMachine
 				_currentTransitions = _emptyTransitions;
 
 			_currentState.OnEnter();
+			OnTransitionsEnter(_currentTransitions);
 		}
 
-		public void AddTransition(IState from, IState to, ICondition predicate, bool reversed)
+		public StateMachine AddTransition(IState from, IState to, ICondition predicate, bool reversed)
 		{
 			if (_transitions.TryGetValue(from.GetType(), out var transitions) == false)
 			{
@@ -84,26 +110,49 @@ namespace ToolBox.StateMachine
 			}
 
 			transitions.Add(new Transition(to, predicate, reversed));
+
+			return this;
 		}
 
-		public void AddAnyTransition(IState state, ICondition predicate, bool reversed) =>
+		public StateMachine AddAnyTransition(IState state, ICondition predicate, bool reversed)
+		{
 			_anyTransitions.Add(new Transition(state, predicate, reversed));
 
-		private class Transition
-		{
-			public ICondition Condition { get; } = null;
-			public IState To { get; } = null;
-			public bool Reversed { get; } = false;
-
-			public Transition(IState to, ICondition condition, bool reversed)
-			{
-				To = to;
-				Condition = condition;
-				Reversed = reversed;
-			}
+			return this;
 		}
 
-		private Transition GetTransition()
+		public StateMachine AddConcurrentState(IState state)
+		{
+			if (!_concurrentStates.Contains(state))
+				_concurrentStates.Add(state);
+
+			return this;
+		}
+
+		public StateMachine Configure()
+		{
+			_transitions = new Dictionary<Type, List<Transition>>();
+			_currentTransitions = new List<Transition>();
+			_anyTransitions = new List<Transition>();
+			_concurrentStates = new List<IState>();
+
+			Preconfigure();
+
+			return this;
+		}
+
+		public StateMachine Configure(StateMachine startState)
+		{
+			_startState = startState;
+
+			Configure();
+
+			return this;
+		}
+
+		protected virtual void Preconfigure() { }
+
+		private Transition GetTransition(float deltaTime)
 		{
 			int count = _currentTransitions.Count;
 
@@ -111,7 +160,7 @@ namespace ToolBox.StateMachine
 			{
 				Transition transition = _currentTransitions[i];
 
-				var conditionResult = transition.Condition.Check();
+				var conditionResult = transition.Condition.Check(deltaTime);
 				var isReversed = transition.Reversed;
 
 				var canTransition = (conditionResult && !isReversed) || (!conditionResult && isReversed);
@@ -126,7 +175,7 @@ namespace ToolBox.StateMachine
 			{
 				Transition transition = _anyTransitions[i];
 
-				var conditionResult = transition.Condition.Check();
+				var conditionResult = transition.Condition.Check(deltaTime);
 				var isReversed = transition.Reversed;
 
 				var canTransition = (conditionResult && !isReversed) || (!conditionResult && isReversed);
@@ -168,6 +217,20 @@ namespace ToolBox.StateMachine
 
 			for (int i = 0; i < count; i++)
 				transitions[i].Condition.OnPause();
+		}
+
+		private class Transition
+		{
+			public ICondition Condition { get; } = null;
+			public IState To { get; } = null;
+			public bool Reversed { get; } = false;
+
+			public Transition(IState to, ICondition condition, bool reversed)
+			{
+				To = to;
+				Condition = condition;
+				Reversed = reversed;
+			}
 		}
 	}
 }

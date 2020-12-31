@@ -5,18 +5,18 @@ namespace ToolBox.StateMachine
 	public class WaitFor : ICondition
 	{
 		private float _waitFor = 0f;
-		private float _value = 0f;
+		private float _timeSpend = 0f;
 
 		public WaitFor(float waitFor) =>
 			_waitFor = waitFor;
 
 		public void OnEnter() =>
-			_value = 0f;
+			_timeSpend = 0f;
 
-		public bool Check()
+		public bool Check(float deltaTime)
 		{
-			_value += Time.deltaTime;
-			return _value >= _waitFor;
+			_timeSpend += deltaTime;
+			return _timeSpend >= _waitFor;
 		}
 
 		public void OnExit() { }
