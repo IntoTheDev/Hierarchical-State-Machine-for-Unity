@@ -4,6 +4,16 @@ Hierarchical State Machine for Unity. Most likely i will rewrite it multiple tim
 - [ ] Detailed guide
 - [x] Git Package
 
+## How to Install
+### Git Installation
+
+If you have Git on your computer, you can open Package Manager indside Unity, select "Add package from Git url...", and paste link ```https://github.com/IntoTheDev/Hierarchical-State-Machine-for-Unity.git```
+
+or
+
+Open the manifest.json file of your Unity project.
+Add ```"com.intothedev.ai": "https://github.com/IntoTheDev/Hierarchical-State-Machine-for-Unity.git"```
+
 ## Simple Example:
 ```csharp
 public class TestStateMachine : HierarchicalStateMachine
