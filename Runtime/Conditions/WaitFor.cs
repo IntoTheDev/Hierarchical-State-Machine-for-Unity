@@ -2,9 +2,10 @@
 
 namespace ToolBox.StateMachine
 {
+	[System.Serializable]
 	public class WaitFor : ICondition
 	{
-		private float _waitFor = 0f;
+		[SerializeField, Min(0f)] private float _waitFor = 0f;
 		private float _timeSpend = 0f;
 
 		public WaitFor(float waitFor) =>

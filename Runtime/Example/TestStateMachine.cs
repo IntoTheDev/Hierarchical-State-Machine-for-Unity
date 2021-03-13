@@ -9,8 +9,8 @@ namespace ToolBox.StateMachine.Examples
 			var patrolState = new PatrolState(transform, speed: 5f, randomizeStartSpeed: true);
 			var emptyState = new Empty();
 
-			var stateMachine = new StateMachine(patrolState)
-				.Configure()
+			var stateMachine = new CustomStateMachine()
+				.Configure(patrolState)
 				.AddTransition(patrolState, emptyState, new WaitFor(waitFor: 1f), reversed: false)
 				.AddTransition(emptyState, patrolState, new WaitFor(waitFor: 3f), reversed: false);
 

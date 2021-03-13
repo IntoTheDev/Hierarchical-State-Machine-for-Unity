@@ -1,14 +1,16 @@
-﻿using System;
+﻿using ICSharpCode.NRefactory.PrettyPrinter;
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace ToolBox.StateMachine
 {
 	[Serializable]
-	public class StateMachine : IState
+	public abstract class StateMachine : IState
 	{
+		protected IState _startState;
 		private IState _currentState;
-		private IState _startState;
-		private Dictionary<Type, List<Transition>> _transitions = new Dictionary<Type, List<Transition>>();
+		private Dictionary<int, List<Transition>> _transitions = new Dictionary<int, List<Transition>>();
 		private List<Transition> _currentTransitions = new List<Transition>();
 		private List<Transition> _anyTransitions = new List<Transition>();
 		private List<IState> _concurrentStates = new List<IState>();
@@ -16,9 +18,6 @@ namespace ToolBox.StateMachine
 		private static List<Transition> _emptyTransitions = new List<Transition>(0);
 
 		public IState CurrentState => _currentState;
-
-		public StateMachine(IState startState) =>
-			_startState = startState;
 
 		public void OnResume()
 		{
@@ -93,7 +92,7 @@ namespace ToolBox.StateMachine
 
 			_currentState = state;
 
-			_transitions.TryGetValue(_currentState.GetType(), out _currentTransitions);
+			_transitions.TryGetValue(_currentState.GetHashCode(), out _currentTransitions);
 			if (_currentTransitions == null)
 				_currentTransitions = _emptyTransitions;
 
@@ -103,10 +102,10 @@ namespace ToolBox.StateMachine
 
 		public StateMachine AddTransition(IState from, IState to, ICondition predicate, bool reversed)
 		{
-			if (_transitions.TryGetValue(from.GetType(), out var transitions) == false)
+			if (_transitions.TryGetValue(from.GetHashCode(), out var transitions) == false)
 			{
 				transitions = new List<Transition>();
-				_transitions[from.GetType()] = transitions;
+				_transitions[from.GetHashCode()] = transitions;
 			}
 
 			transitions.Add(new Transition(to, predicate, reversed));
@@ -131,17 +130,17 @@ namespace ToolBox.StateMachine
 
 		public StateMachine Configure()
 		{
-			_transitions = new Dictionary<Type, List<Transition>>();
+			_transitions = new Dictionary<int, List<Transition>>();
 			_currentTransitions = new List<Transition>();
 			_anyTransitions = new List<Transition>();
 			_concurrentStates = new List<IState>();
 
-			Preconfigure();
+			Postconfigure();
 
 			return this;
 		}
 
-		public StateMachine Configure(StateMachine startState)
+		public StateMachine Configure(IState startState)
 		{
 			_startState = startState;
 
@@ -150,7 +149,7 @@ namespace ToolBox.StateMachine
 			return this;
 		}
 
-		protected virtual void Preconfigure() { }
+		protected virtual void Postconfigure() { }
 
 		private Transition GetTransition(float deltaTime)
 		{
