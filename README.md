@@ -26,8 +26,8 @@ public class TestStateMachine : HierarchicalStateMachine
 		var patrolState = new PatrolState(transform, speed: 5f, randomizeStartSpeed: true);
 		var emptyState = new Empty();
 
-		var stateMachine = new StateMachine(startState: patrolState)
-			.Configure()
+		var stateMachine = new StateMachine()
+			.Configure(startState: patrolState)
 			.AddTransition(patrolState, emptyState, new WaitFor(waitFor: 1f), reversed: false)
 			.AddTransition(emptyState, patrolState, new WaitFor(waitFor: 3f), reversed: false);
 
