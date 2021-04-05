@@ -1,4 +1,4 @@
-Hierarchical State Machine for Unity. Most likely i will rewrite it multiple times in future but for now it suits my needs.
+Hierarchical State Machine for Unity. Most likely I will rewrite it multiple times in the future but for now it suits my needs.
 
 ### TODO
 - [ ] Detailed guide
